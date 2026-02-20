@@ -1,0 +1,21 @@
+[Unit]
+Description=FastAPI backend
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/var/www/backend
+Environment="PATH=/var/www/backend/venv/bin"
+ExecStart=/var/www/backend/venv/bin/gunicorn main:app \
+          --workers 4 \
+          --worker-class uvicorn.workers.UvicornWorker \
+          --bind 127.0.0.1:8000 \
+          --preload
+Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Install]
+WantedBy=multi-user.target
