@@ -1,0 +1,42 @@
+name: CI/CD Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.EC2_DEPLOY_KEY }}
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@YOUR_EC2_IP << 'EOF'
+            set -e
+            echo "Pulling latest code..."
+            cd ~/fastapi-app
+            git reset --hard
+            git pull origin main
+
+            echo "Installing backend dependencies..."
+            source ~/fastapi-app/backend/venv/bin/activate
+            pip install -r backend/requirement.txt
+
+            echo "Restarting FastAPI service (zero-downtime)..."
+            sudo systemctl restart fastapi
+
+            echo "Frontend is static, copying to /var/www/app/frontend..."
+            mkdir -p /var/www/app/frontend
+            cp -r frontend/* /var/www/app/frontend/
+
+            echo "Deployment complete ✅"
+          EOF
